@@ -1,51 +1,37 @@
-const accessKey="iP7p67tucfGZczUpAGdelHlOzCNpKjv_3AFLz-PIciY";
+var app = angular.module('imageSearchApp', []);
 
-const searchForm = document.getElementById("search-form");
-const searchBox = document.getElementById("search-box");
-const searchResult = document.getElementById("search-result");
-const searchMoreBtn= document.getElementById("show-more-btn");
+app.controller('ImageSearchController', ['$http', function($http) {
+    var vm = this;
+    vm.accessKey = "iP7p67tucfGZczUpAGdelHlOzCNpKjv_3AFLz-PIciY";
+    vm.keyword = "";
+    vm.page = 1;
+    vm.results = [];
+    vm.showMoreBtn = true;
 
+    vm.searchImages = function() {
+        var url = `https://api.unsplash.com/search/photos?page=${vm.page}&query=${vm.keyword}&client_id=${vm.accessKey}&per_page=12`;
 
-let keyword="";
-let page=1;
+        $http.get(url)
+            .then(function(response) {
+                if (vm.page === 1) {
+                    vm.results = [];
+                }
+                vm.results = vm.results.concat(response.data.results);
+                vm.showMoreBtn = true;
+            })
+            .catch(function(error) {
+                console.error('Error fetching images:', error);
+            });
+    };
 
-async function searchImages(){
-    keyword = searchBox.value;
-    const url = `https://api.unsplash.com/search/photos?page=${page}&query=${keyword}&client_id=${accessKey}&per_page=12`;
+    vm.loadMore = function() {
+        vm.page++;
+        vm.searchImages();
+    };
 
-    const response = await fetch(url);
-    const data = await response.json();
+    // Function to check if there are more pages
+    vm.hasMorePages = function() {
+        return vm.page < 10; // You can adjust the maximum number of pages as needed
+    };
 
-    if(page==1){
-        searchResult.innerHTML="";
-    }
-    const results = data.results;
-
-    results.map((result) => {
-        const image = document.createElement("img");
-        image.src = result.urls.small;
-        const imageLink = document.createElement("a");
-        imageLink.href = result.links.html;
-        imageLink.target = "_blank";
-
-        imageLink.appendChild(image);
-        searchResult.appendChild(imageLink);
-    })
-
-    searchMoreBtn.style.display = "block";
-
-}
-
-
-searchForm.addEventListener("submit", (e) =>{
-    e.preventDefault();
-    page = 1 ;
-    searchImages();
-
-})
-
-searchMoreBtn.addEventListener("click",()=>{
-
-    page++;
-    searchImages();
-})
+}]);
